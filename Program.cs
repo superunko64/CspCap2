@@ -73,12 +73,17 @@ class CaptureForm : Form
             pool.Recreate(winrtDevice, DirectXPixelFormat.B8G8R8A8UIntNormalized, 2, frame.ContentSize);
         }
         ctx.CopyResource(staging!, tex);
-        var box = ctx.Map(staging!, 0, MapMode.Read, MapFlags.None);
-        var bmp = new Bitmap(staging!.Description.Width, staging.Description.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+        var box = ctx.Map(staging!, 0, MapMode.Read, Vortice.Direct3D11.MapFlags.None);
+        var bmp = new Bitmap((int)staging!.Description.Width, (int)staging.Description.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
         var bd = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, bmp.PixelFormat);
+        var rowBytes = bmp.Width * 4;
+        var rowBuffer = new byte[rowBytes];
         for (int y = 0; y < bmp.Height; y++)
         {
-            Buffer.MemoryCopy((void*)(box.DataPointer + y * box.RowPitch), (void*)(bd.Scan0 + y * bd.Stride), bd.Stride, bmp.Width * 4);
+            var srcRow = nint.Add(box.DataPointer, y * box.RowPitch);
+            var dstRow = nint.Add(bd.Scan0, y * bd.Stride);
+            Marshal.Copy(srcRow, rowBuffer, 0, rowBytes);
+            Marshal.Copy(rowBuffer, 0, dstRow, rowBytes);
         }
         bmp.UnlockBits(bd);
         ctx.Unmap(staging!, 0);
