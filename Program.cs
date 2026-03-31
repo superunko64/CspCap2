@@ -80,7 +80,8 @@ class CaptureForm : Form
         var rowBuffer = new byte[rowBytes];
         for (int y = 0; y < bmp.Height; y++)
         {
-            var srcRow = nint.Add(box.DataPointer, y * box.RowPitch);
+            var srcOffset = checked(y * (int)box.RowPitch);
+            var srcRow = nint.Add(box.DataPointer, srcOffset);
             var dstRow = nint.Add(bd.Scan0, y * bd.Stride);
             Marshal.Copy(srcRow, rowBuffer, 0, rowBytes);
             Marshal.Copy(rowBuffer, 0, dstRow, rowBytes);
